@@ -2,8 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}GASUL LPG Surigao{% endblock %}</title>
+
+  <!-- ── PWA: Web App Manifest ── -->
+  <link rel="manifest" href="/static/manifest.json">
+
+  <!-- ── PWA: Theme & Status Bar ── -->
+  <meta name="theme-color" content="#FF4500">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="GASUL LPG">
+
+  <!-- ── PWA: Apple / iOS ── -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GASUL LPG">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/static/icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/static/icons/icon-144.png">
+
+  <!-- ── PWA: Microsoft Tile ── -->
+  <meta name="msapplication-TileImage" content="/static/icons/icon-144.png">
+  <meta name="msapplication-TileColor" content="#1a2a4a">
+  <meta name="msapplication-tap-highlight" content="no">
+
+  <!-- ── SEO & Social ── -->
+  <meta name="description" content="Order LPG gas cylinders online from GASUL LPG Surigao del Norte. Fast delivery, easy checkout.">
+
+  <!-- ── Icons ── -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+  <link rel="shortcut icon" href="/static/icons/icon-96.png">
+
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -307,6 +336,58 @@
       .page-header { padding:1.25rem 1rem; }
       .container { padding:0 1rem; }
     }
+
+    /* ── PWA / MOBILE ENHANCEMENTS ── */
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; }
+    a, button, .btn, .payment-card, .qty-btn, .nav-toggle { -webkit-tap-highlight-color: transparent; }
+    .btn { min-height: 44px; }
+    .nav-links a { min-height: 44px; }
+    .qty-btn { min-width: 44px; min-height: 44px; }
+    .form-group input, .form-group textarea, .form-group select { min-height: 44px; }
+    @media(max-width:768px){
+      .form-group input, .form-group textarea, .form-group select { font-size: 16px; }
+    }
+    nav {
+      padding-left: max(1.25rem, calc(1rem + env(safe-area-inset-left)));
+      padding-right: max(1.25rem, calc(1rem + env(safe-area-inset-right)));
+    }
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    footer { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)); }
+
+    /* PWA Install Banner */
+    #pwa-install-banner {
+      display: none;
+      position: fixed;
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+      left: 1rem; right: 1rem;
+      background: var(--gas-blue);
+      color: white;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      z-index: 500;
+      align-items: center;
+      gap: 0.75rem;
+      border: 1px solid rgba(255,69,0,0.4);
+    }
+    #pwa-install-banner.visible { display: flex; }
+    #pwa-install-banner .banner-icon { font-size: 2rem; flex-shrink: 0; }
+    #pwa-install-banner .banner-text { flex: 1; }
+    #pwa-install-banner .banner-text strong { display: block; font-size: 0.9rem; color: var(--flame); }
+    #pwa-install-banner .banner-text span { font-size: 0.78rem; color: var(--silver); }
+    #pwa-install-banner .banner-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    #pwa-install-banner .btn-install { background: var(--flame); color: white; border: none; padding: 0.45rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+    #pwa-install-banner .btn-dismiss { background: transparent; color: var(--silver); border: 1px solid rgba(255,255,255,0.2); padding: 0.45rem 0.75rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
+
+    /* Offline indicator */
+    #offline-bar {
+      display: none;
+      position: fixed; top: 64px; left: 0; right: 0;
+      background: var(--warning); color: #1a1a1a;
+      text-align: center; padding: 0.5rem 1rem;
+      font-size: 0.83rem; font-weight: 600; z-index: 900;
+    }
+    #offline-bar.visible { display: block; }
   </style>
   {% block extra_css %}{% endblock %}
 </head>
@@ -399,6 +480,87 @@
     toggle.classList.remove('open');
     links.classList.remove('open');
   }));
+</script>
+
+<!-- ── PWA: Service Worker Registration ── -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/js/sw.js', { scope: '/' })
+        .then(reg => console.log('[SW] Registered, scope:', reg.scope))
+        .catch(err => console.warn('[SW] Registration failed:', err));
+    });
+  }
+</script>
+
+<!-- ── PWA: Install Banner ── -->
+<div id="pwa-install-banner" role="dialog" aria-label="Install App">
+  <span class="banner-icon">🔥</span>
+  <div class="banner-text">
+    <strong>Install GASUL LPG</strong>
+    <span>Add to Home Screen for fast access</span>
+  </div>
+  <div class="banner-actions">
+    <button class="btn-install" id="pwa-install-btn">Install</button>
+    <button class="btn-dismiss" id="pwa-dismiss-btn">✕</button>
+  </div>
+</div>
+
+<!-- ── Offline Indicator ── -->
+<div id="offline-bar">⚠️ You are offline. Some features may be unavailable.</div>
+
+<script>
+(function () {
+  // --- Install Banner ---
+  let deferredPrompt = null;
+  const banner   = document.getElementById('pwa-install-banner');
+  const installBtn = document.getElementById('pwa-install-btn');
+  const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+  // Only show if not dismissed before
+  const dismissed = localStorage.getItem('pwa-banner-dismissed');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!dismissed) {
+      setTimeout(() => banner.classList.add('visible'), 3000);
+    }
+  });
+
+  installBtn && installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('[PWA] Install outcome:', outcome);
+    deferredPrompt = null;
+    banner.classList.remove('visible');
+  });
+
+  dismissBtn && dismissBtn.addEventListener('click', () => {
+    banner.classList.remove('visible');
+    localStorage.setItem('pwa-banner-dismissed', '1');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    banner.classList.remove('visible');
+    deferredPrompt = null;
+    console.log('[PWA] App installed');
+  });
+
+  // --- Offline / Online detection ---
+  const offlineBar = document.getElementById('offline-bar');
+  function updateOnlineStatus() {
+    if (!navigator.onLine) {
+      offlineBar.classList.add('visible');
+    } else {
+      offlineBar.classList.remove('visible');
+    }
+  }
+  window.addEventListener('online',  updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+})();
 </script>
 </body>
 </html>
