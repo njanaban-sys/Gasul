@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{% if product %}Edit {{ product.name }}{% else %}Add Product{% endif %} – Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:800px; margin:1.5rem auto; padding:0 1.25rem; }
+  .panel { background:white; border-radius:14px; padding:1.75rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+  .panel h3 { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--gas-blue); letter-spacing:1px; margin-bottom:1.5rem; padding-bottom:0.75rem; border-bottom:2px solid #f3f4f6; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media(max-width:540px){ .form-row{ grid-template-columns:1fr; } }
+  .preview-img { width:100px; height:100px; border-radius:10px; object-fit:cover; margin-bottom:0.5rem; display:block; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>{% if product %}✏️ Edit Product{% else %}➕ Add Product{% endif %}</h1>
+  </div>
+</div>
+<div class="admin-wrap">
+  <div class="panel">
+    <h3>{% if product %}Edit: {{ product.name }}{% else %}New Product{% endif %}</h3>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Product Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="name" required value="{{ product.name|default:'' }}" placeholder="e.g. GASUL 11kg LPG Cylinder">
+        </div>
+        <div class="form-group">
+          <label>Category <span style="color:var(--danger)">*</span></label>
+          <select name="category" required>
+            <option value="">Select a category…</option>
+            {% for cat in categories %}
+            <option value="{{ cat.pk }}" {% if product and product.category_id == cat.pk %}selected{% endif %}>
+              {{ cat.icon }} {{ cat.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" rows="3" placeholder="Describe this product…" style="resize:vertical">{{ product.description|default:'' }}</textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price (₱) <span style="color:var(--danger)">*</span></label>
+          <input type="number" name="price" step="0.01" min="0" required value="{{ product.price|default:'' }}" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Stock</label>
+          <input type="number" name="stock" min="0" value="{{ product.stock|default:'0' }}" placeholder="0">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Discount % <span style="color:var(--muted);font-weight:400">(0 for none)</span></label>
+          <input type="number" name="discount_percent" step="0.01" min="0" max="100" value="{{ product.discount_percent|default:'0' }}" placeholder="0">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;gap:0.5rem;padding-bottom:1.25rem">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:600;color:var(--gas-blue)">
+            <input type="checkbox" name="is_active" {% if not product or product.is_active %}checked{% endif %} style="width:18px;height:18px;accent-color:var(--flame)">
+            Active (visible to customers)
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Product Image</label>
+        {% if product and product.image %}
+          <img src="{{ product.image.url }}" alt="" class="preview-img">
+          <div class="form-hint">Current image shown. Upload a new one to replace it.</div>
+        {% endif %}
+        <input type="file" name="image" accept="image/*" style="padding:0.5rem">
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+        <button type="submit" class="btn btn-purple">💾 {% if product %}Save Changes{% else %}Add Product{% endif %}</button>
+        <a href="{% url 'dashboard:products' %}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

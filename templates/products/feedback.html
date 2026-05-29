@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Customer Feedback – GASUL LPG{% endblock %}
+{% block extra_css %}
+<style>
+  .feedback-wrap { max-width:900px; margin:1.5rem auto; padding:0 1.25rem; display:grid; grid-template-columns:1fr 1fr; gap:2rem; }
+  @media(max-width:680px){ .feedback-wrap{ grid-template-columns:1fr; } }
+  .section-box { background:white; border-radius:14px; padding:1.75rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); height:fit-content; }
+  .section-box h3 { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--gas-blue); letter-spacing:1px; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:2px solid #f3f4f6; }
+  .fb-card { border-bottom:1px solid #f3f4f6; padding:1rem 0; }
+  .fb-card:last-child { border-bottom:none; }
+  .fb-stars { color:#f59e0b; font-size:1rem; }
+  .fb-name { font-weight:700; color:var(--gas-blue); font-size:0.9rem; }
+  .fb-msg { font-size:0.875rem; color:var(--muted); margin-top:0.35rem; line-height:1.5; }
+  .star-select { display:flex; gap:4px; }
+  .star-select input { display:none; }
+  .star-select label { font-size:1.5rem; color:#d1d5db; cursor:pointer; transition:color 0.15s; }
+  .star-select input:checked ~ label,
+  .star-select label:hover,
+  .star-select label:hover ~ label { color:#f59e0b; }
+  .star-select { flex-direction:row-reverse; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>💬 Customer Feedback</h1>
+    <p>Share your experience with GASUL LPG</p>
+  </div>
+</div>
+<div class="feedback-wrap">
+  <!-- Submit form -->
+  <div class="section-box">
+    <h3>Leave a Review</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Your Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="name" required placeholder="Your full name" {% if user.is_authenticated %}value="{{ user.username }}"{% endif %}>
+      </div>
+      <div class="form-group">
+        <label>Email <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <input type="email" name="email" placeholder="your@email.com" {% if user.is_authenticated and user.email %}value="{{ user.email }}"{% endif %}>
+      </div>
+      <div class="form-group">
+        <label>Rating</label>
+        <div class="star-select">
+          {% for i in "54321" %}
+          <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" {% if i == "5" %}checked{% endif %}>
+          <label for="star{{ i }}">★</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Message <span style="color:var(--danger)">*</span></label>
+        <textarea name="message" rows="4" required placeholder="Tell us about your experience…" style="resize:vertical"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Submit Feedback</button>
+    </form>
+  </div>
+
+  <!-- Published reviews -->
+  <div class="section-box">
+    <h3>What Customers Say</h3>
+    {% for fb in feedbacks %}
+    <div class="fb-card">
+      <div class="fb-stars">{% for i in fb.rating|ljust:"5" %}★{% endfor %}</div>
+      <div class="fb-name">{{ fb.name }}</div>
+      <div class="fb-msg">{{ fb.message }}</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">{{ fb.created_at|date:"M j, Y" }}</div>
+    </div>
+    {% empty %}
+    <div class="empty-state" style="padding:2rem 0">
+      <div class="icon">💬</div>
+      <p>No reviews yet. Be the first!</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

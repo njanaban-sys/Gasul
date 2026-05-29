@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Checkout – GASUL LPG{% endblock %}
+
+{% block extra_css %}
+<style>
+  .checkout-wrap {
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+  }
+  @media(max-width:700px){ .checkout-wrap{ grid-template-columns:1fr; } }
+
+  .checkout-section {
+    background: white;
+    border-radius: 14px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    height: fit-content;
+  }
+  .checkout-section h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    color: var(--gas-blue);
+    letter-spacing: 1px;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f3f4f6;
+  }
+
+  .order-row { display:flex; justify-content:space-between; align-items:center; padding:0.75rem 0; border-bottom:1px solid #f9fafb; font-size:0.9rem; }
+  .order-row:last-of-type { border-bottom:none; }
+  .order-row-name { color:var(--gas-blue); font-weight:600; }
+  .order-row-qty { color:var(--muted); font-size:0.8rem; }
+  .order-row-price { font-weight:700; color:var(--flame); }
+
+  .order-total { display:flex; justify-content:space-between; font-size:1.3rem; font-weight:700; padding-top:1rem; margin-top:0.5rem; border-top:2px solid var(--gas-blue); color:var(--gas-blue); }
+  .order-total span:last-child { color:var(--flame); }
+
+  .gcash-section {
+    display: none;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f0fdf4;
+    border-radius: 10px;
+    border: 2px solid #86efac;
+  }
+  .gcash-section.show { display: block; }
+  .gcash-number { font-size:1.2rem; font-weight:700; color:#166534; letter-spacing:2px; text-align:center; padding:0.75rem; background:white; border-radius:8px; margin-bottom:0.75rem; }
+
+  .trust-badges { display:flex; gap:0.75rem; margin-top:1.25rem; flex-wrap:wrap; }
+  .trust-badge { display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>📋 Checkout</h1>
+    <p>Review your order and choose your payment method</p>
+  </div>
+</div>
+
+<div class="checkout-wrap">
+  <!-- Left: delivery + payment -->
+  <div>
+    <form method="post" action="{% url 'orders:place_order' %}" id="order-form">
+      {% csrf_token %}
+
+      <div class="checkout-section" style="margin-bottom:1.5rem">
+        <h3>📍 Delivery Details</h3>
+        <div class="form-group">
+          <label>Delivery Address <span style="color:var(--danger)">*</span></label>
+          <textarea name="delivery_address" rows="3" required
+            placeholder="Enter your full delivery address, barangay, city…"
+            style="resize:vertical"></textarea>
+          <div class="form-hint">Include barangay, street, and any landmarks.</div>
+        </div>
+        <div class="form-group">
+          <label>Special Instructions <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+          <textarea name="special_instructions" rows="2"
+            placeholder="e.g. Call before delivery, leave at gate…"
+            style="resize:vertical"></textarea>
+        </div>
+      </div>
+
+      <div class="checkout-section">
+        <h3>💳 Payment Method</h3>
+        <div class="payment-options">
+          <label class="payment-card selected" id="cod-card">
+            <input type="radio" name="payment_method" value="cod" checked onchange="togglePayment(this)">
+            <span class="pay-icon">💵</span>
+            <div class="pay-name">Cash on Delivery</div>
+            <div class="pay-desc">Pay when your order arrives</div>
+          </label>
+          <label class="payment-card" id="gcash-card">
+            <input type="radio" name="payment_method" value="gcash" onchange="togglePayment(this)">
+            <span class="pay-icon">📱</span>
+            <div class="pay-name">GCash</div>
+            <div class="pay-desc">Pay via GCash e-wallet</div>
+          </label>
+        </div>
+
+        <div class="gcash-section" id="gcash-details">
+          <div class="gcash-number">📱 0917 – XXX – XXXX</div>
+          <p style="font-size:0.85rem;color:#166534;text-align:center;margin-bottom:0.75rem">
+            Send payment to the GCash number above, then enter your reference number below.
+          </p>
+          <div class="form-group" style="margin-bottom:0">
+            <label>GCash Reference Number <span style="color:var(--danger)">*</span></label>
+            <input type="text" name="gcash_reference" id="gcash_reference"
+              placeholder="e.g. 1234567890"
+              style="font-family:monospace;letter-spacing:2px">
+            <div class="form-hint">Found in your GCash transaction history.</div>
+          </div>
+        </div>
+
+        <div class="trust-badges">
+          <div class="trust-badge">✅ Secure checkout</div>
+          <div class="trust-badge">🔥 Fast delivery</div>
+          <div class="trust-badge">📦 Order tracking</div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right: order summary -->
+  <div class="checkout-section">
+    <h3>🧾 Order Summary</h3>
+    {% for item in items %}
+    <div class="order-row">
+      <div>
+        <div class="order-row-name">{{ item.product.name }}</div>
+        <div class="order-row-qty">{{ item.quantity }} × ₱{{ item.product.discounted_price|floatformat:2 }}</div>
+      </div>
+      <div class="order-row-price">₱{{ item.subtotal|floatformat:2 }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="order-total">
+      <span>Total</span>
+      <span>₱{{ total|floatformat:2 }}</span>
+    </div>
+
+    <button type="submit" form="order-form" class="btn btn-primary btn-full" style="margin-top:1.5rem;padding:1rem;font-size:1.1rem;letter-spacing:1px">
+      🔥 Confirm Order
+    </button>
+    <a href="{% url 'orders:cart' %}" class="btn btn-outline btn-full" style="margin-top:0.75rem">
+      ← Back to Cart
+    </a>
+  </div>
+</div>
+
+<script>
+function togglePayment(radio) {
+  const codCard   = document.getElementById('cod-card');
+  const gcashCard = document.getElementById('gcash-card');
+  const gcashDetails = document.getElementById('gcash-details');
+  const gcashRef = document.getElementById('gcash_reference');
+
+  codCard.classList.remove('selected');
+  gcashCard.classList.remove('selected');
+
+  if (radio.value === 'gcash') {
+    gcashCard.classList.add('selected');
+    gcashDetails.classList.add('show');
+    gcashRef.required = true;
+  } else {
+    codCard.classList.add('selected');
+    gcashDetails.classList.remove('show');
+    gcashRef.required = false;
+    gcashRef.value = '';
+  }
+}
+</script>
+{% endblock %}

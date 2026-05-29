@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Active Carts – GASUL LPG Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:1100px; margin:1.5rem auto; padding:0 1.25rem; }
+  .cart-block { background:white; border-radius:14px; padding:1.5rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-bottom:1.25rem; }
+  .cart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem; }
+  .cart-user { font-weight:700; color:var(--gas-blue); font-size:1rem; }
+  .item-row { display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; border-bottom:1px solid #f9fafb; font-size:0.9rem; }
+  .item-row:last-child { border-bottom:none; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🛒 Active Carts</h1>
+    <p>{{ users_with_carts|length }} user{{ users_with_carts|length|pluralize }} with items in cart</p>
+  </div>
+</div>
+<div class="admin-wrap">
+  {% for u in users_with_carts %}
+  <div class="cart-block">
+    <div class="cart-header">
+      <div class="cart-user">👤 {{ u.username }}</div>
+      <span class="badge badge-blue">{{ u.cart_items.count }} item{{ u.cart_items.count|pluralize }}</span>
+    </div>
+    {% for item in u.cart_items.all %}
+    <div class="item-row">
+      <span>{{ item.product.category.icon }} <strong>{{ item.product.name }}</strong></span>
+      <span>Qty: {{ item.quantity }} · <strong style="color:var(--flame)">₱{{ item.subtotal|floatformat:2 }}</strong></span>
+    </div>
+    {% endfor %}
+    <div style="margin-top:0.75rem;font-size:0.8rem;color:var(--muted)">Last updated: {{ u.cart_items.last.added_at|date:"M j, Y g:i A" }}</div>
+  </div>
+  {% empty %}
+  <div class="card">
+    <div class="empty-state"><div class="icon">🛒</div><h3>No active carts</h3><p>No users have items in their cart right now.</p></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

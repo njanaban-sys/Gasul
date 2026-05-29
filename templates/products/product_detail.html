@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} – GASUL LPG{% endblock %}
+{% block extra_css %}
+<style>
+  .detail-wrap { max-width:960px; margin:1.5rem auto; padding:0 1.25rem; display:grid; grid-template-columns:1fr 1fr; gap:2rem; }
+  @media(max-width:640px){ .detail-wrap{ grid-template-columns:1fr; } }
+  .product-img-lg { background:linear-gradient(135deg,#f3f4f6,#e5e7eb); border-radius:16px; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:10rem; overflow:hidden; }
+  .product-img-lg img { width:100%; height:100%; object-fit:cover; }
+  .product-info-panel { display:flex; flex-direction:column; gap:1rem; }
+  .cat-label { font-size:0.78rem; font-weight:700; color:var(--flame); text-transform:uppercase; letter-spacing:1.5px; }
+  .product-title { font-family:'Bebas Neue',sans-serif; font-size:2.5rem; color:var(--gas-blue); letter-spacing:2px; line-height:1.1; }
+  .price-block { display:flex; align-items:baseline; gap:0.75rem; }
+  .price-main { font-size:2rem; font-weight:700; color:var(--flame); }
+  .price-orig { font-size:1rem; color:var(--muted); text-decoration:line-through; }
+  .stock-info { font-size:0.875rem; }
+  .stock-info.in { color:var(--success); } .stock-info.out { color:var(--danger); }
+  .action-row { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+  .desc-box { background:white; border-radius:12px; padding:1.5rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-top:1rem; grid-column:1/-1; }
+  .desc-box h4 { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--gas-blue); letter-spacing:1px; margin-bottom:0.75rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <p><a href="{% url 'products:home' %}" style="color:var(--silver);text-decoration:none">← Back to Shop</a></p>
+    <h1>{{ product.name }}</h1>
+  </div>
+</div>
+<div class="detail-wrap">
+  <div>
+    <div class="product-img-lg">
+      {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}🔥{% endif %}
+    </div>
+  </div>
+  <div class="product-info-panel">
+    <div class="cat-label">{{ product.category.icon }} {{ product.category.name }}</div>
+    <h1 class="product-title">{{ product.name }}</h1>
+    <div class="price-block">
+      <span class="price-main">₱{{ product.discounted_price|floatformat:2 }}</span>
+      {% if product.discount_percent %}<span class="price-orig">₱{{ product.price|floatformat:2 }}</span><span class="badge badge-flame">-{{ product.discount_percent|floatformat:0 }}% OFF</span>{% endif %}
+    </div>
+    {% if product.is_available %}
+      <div class="stock-info in">✅ In Stock ({{ product.stock }} available)</div>
+    {% else %}
+      <div class="stock-info out">❌ Out of Stock</div>
+    {% endif %}
+
+    {% if not user.is_staff and not user.is_superuser %}
+    <div class="action-row">
+      {% if product.is_available %}
+        {% if user.is_authenticated %}
+          <form method="post" action="{% url 'orders:add_to_cart' product.pk %}">
+            {% csrf_token %}
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <div class="qty-group">
+                <button type="button" class="qty-btn" onclick="adj(this,-1)">−</button>
+                <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="qty-input">
+                <button type="button" class="qty-btn" onclick="adj(this,1)">+</button>
+              </div>
+              <button type="submit" class="btn btn-primary">🛒 Add to Cart</button>
+            </div>
+          </form>
+          <form method="post" action="{% url 'products:toggle_wishlist' product.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn {% if in_wishlist %}btn-danger{% else %}btn-outline{% endif %}">
+              {% if in_wishlist %}❤️ Wishlisted{% else %}🤍 Wishlist{% endif %}
+            </button>
+          </form>
+        {% else %}
+          <a href="{% url 'users:login' %}?next={{ request.path }}" class="btn btn-primary">🛒 Add to Cart</a>
+        {% endif %}
+      {% else %}
+        <span class="btn" style="background:#f3f4f6;color:var(--muted);cursor:not-allowed">Out of Stock</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if product.description %}
+  <div class="desc-box">
+    <h4>Product Description</h4>
+    <p style="line-height:1.7;color:var(--text)">{{ product.description }}</p>
+  </div>
+  {% endif %}
+</div>
+<script>
+function adj(btn, delta) {
+  const inp = btn.parentElement.querySelector('.qty-input');
+  inp.value = Math.min(parseInt(inp.max), Math.max(1, parseInt(inp.value) + delta));
+}
+</script>
+{% endblock %}

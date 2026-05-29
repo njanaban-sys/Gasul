@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Manage Orders – GASUL LPG Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:1200px; margin:1.5rem auto; padding:0 1.25rem; }
+  .filter-bar { background:white; border-radius:12px; padding:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-bottom:1.25rem; display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
+  .filter-bar select, .filter-bar input { padding:0.5rem 0.875rem; border:2px solid #e5e7eb; border-radius:8px; font-family:'Barlow',sans-serif; font-size:0.875rem; flex:1; min-width:130px; }
+  .filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:var(--flame); }
+  .orders-table { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden; }
+  .status-pill, .payment-pill { display:inline-block; padding:0.25rem 0.6rem; border-radius:99px; font-size:0.72rem; font-weight:700; text-transform:capitalize; white-space:nowrap; }
+  .payment-pill.paid { color:#166534; background:#dcfce7; }
+  .payment-pill.pending { color:#92400e; background:#fffbeb; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>📦 Manage Orders</h1>
+    <p>View and update all customer orders</p>
+  </div>
+</div>
+<div class="admin-wrap">
+  <form method="get" class="filter-bar">
+    <input type="text" name="search" value="{{ search }}" placeholder="🔍 Search by username or address…" style="min-width:180px">
+    <select name="status">
+      <option value="">All Statuses</option>
+      {% for val,label in status_choices %}
+      <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="payment">
+      <option value="">All Payments</option>
+      {% for val,label in payment_choices %}
+      <option value="{{ val }}" {% if payment_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="payment_status">
+      <option value="">All Pay Status</option>
+      {% for val,label in payment_status_choices %}
+      <option value="{{ val }}" {% if payment_status_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    {% if search or status_filter or payment_filter %}
+    <a href="{% url 'dashboard:orders' %}" class="btn btn-outline btn-sm">Clear</a>
+    {% endif %}
+  </form>
+
+  <div class="orders-table">
+    {% if orders %}
+    <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Payment</th>
+          <th>Paid?</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td><code style="font-size:0.8rem">#{{ order.short_id }}</code></td>
+          <td><strong>{{ order.user.username }}</strong><br><span style="font-size:0.75rem;color:var(--muted)">{{ order.user.email }}</span></td>
+          <td style="color:var(--flame);font-weight:700;white-space:nowrap">₱{{ order.total_amount|floatformat:2 }}</td>
+          <td style="white-space:nowrap">{% if order.payment_method == 'gcash' %}📱 GCash{% else %}💵 COD{% endif %}</td>
+          <td><span class="payment-pill {{ order.payment_status_display|lower }}">{{ order.payment_status_display }}</span></td>
+          <td><span class="status-pill status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+          <td style="color:var(--muted);white-space:nowrap">{{ order.created_at|date:"M j, Y" }}</td>
+          <td><a href="{% url 'dashboard:order_detail' order.pk %}" class="btn btn-purple btn-sm" style="white-space:nowrap">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="icon">📦</div><h3>No orders found</h3></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

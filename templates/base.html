@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}GASUL LPG Surigao{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --flame:       #FF4500;
+      --flame-light: #FF6B35;
+      --flame-dark:  #CC3200;
+      --gas-blue:    #1a2a4a;
+      --gas-blue-lt: #243660;
+      --silver:      #C0C0C0;
+      --light:       #F5F5F0;
+      --white:       #FFFFFF;
+      --text:        #1a1a1a;
+      --muted:       #6b7280;
+      --success:     #22c55e;
+      --danger:      #ef4444;
+      --warning:     #f59e0b;
+      --admin-accent:#8b5cf6;
+    }
+
+    body { font-family:'Barlow',sans-serif; background:var(--light); color:var(--text); min-height:100vh; }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--gas-blue);
+      padding: 0 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+    nav.admin-nav { background: #0f172a; border-bottom: 3px solid var(--admin-accent); }
+
+    .nav-brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .nav-brand .flame-icon { font-size:1.8rem; }
+    .nav-brand span { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--flame); letter-spacing:2px; }
+    .nav-brand small { color:var(--silver); font-size:0.65rem; font-weight:300; letter-spacing:3px; text-transform:uppercase; display:block; line-height:1; }
+
+    /* Hamburger */
+    .nav-toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.4rem;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .nav-toggle span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--silver);
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-toggle.open span:nth-child(2) { opacity: 0; }
+    .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .nav-links { display:flex; align-items:center; gap:0.25rem; list-style:none; }
+    .nav-links a {
+      color: var(--silver);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.5rem 0.875rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { color:var(--white); background:rgba(255,255,255,0.08); }
+    .nav-links a.active { color:var(--flame); }
+    .nav-links .btn-nav { background:var(--flame); color:var(--white)!important; padding:0.45rem 1rem; border-radius:6px; font-weight:600; }
+    .nav-links .btn-nav:hover { background:var(--flame-dark)!important; }
+    .nav-links .btn-admin { background:var(--admin-accent); color:var(--white)!important; padding:0.45rem 1rem; border-radius:6px; font-weight:600; }
+    .nav-links .btn-admin:hover { background:#7c3aed!important; }
+
+    .admin-badge {
+      background: var(--admin-accent);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cart-badge {
+      background: var(--flame);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 99px;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    /* Mobile nav */
+    @media(max-width: 768px) {
+      .nav-toggle { display: flex; }
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--gas-blue);
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.75rem 1rem 1rem;
+        gap: 0.25rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        z-index: 999;
+      }
+      nav.admin-nav .nav-links { background: #0f172a; }
+      .nav-links.open { display: flex; }
+      .nav-links li { width: 100%; }
+      .nav-links a { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; }
+      .nav-links .btn-nav,
+      .nav-links .btn-admin { text-align: center; justify-content: center; }
+    }
+
+    /* ── MESSAGES ── */
+    .messages {
+      position: fixed;
+      top: 74px;
+      right: 1rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 90vw;
+      width: 340px;
+    }
+    .message {
+      padding: 0.875rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform:translateX(120%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    .message.success { background:#f0fdf4; border-left:4px solid var(--success); color:#166534; }
+    .message.error   { background:#fef2f2; border-left:4px solid var(--danger);  color:#991b1b; }
+    .message.info    { background:#eff6ff; border-left:4px solid #3b82f6;         color:#1e40af; }
+    .message.warning { background:#fffbeb; border-left:4px solid var(--warning);  color:#92400e; }
+
+    /* ── MAIN ── */
+    main { min-height: calc(100vh - 64px - 80px); }
+
+    /* ── FOOTER ── */
+    footer { background:var(--gas-blue); color:var(--silver); text-align:center; padding:1.5rem; font-size:0.8rem; }
+    footer strong { color:var(--flame); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-primary  { background:var(--flame); color:white; }
+    .btn-primary:hover { background:var(--flame-dark); transform:translateY(-1px); }
+    .btn-outline  { background:transparent; color:var(--flame); border:2px solid var(--flame); }
+    .btn-outline:hover { background:var(--flame); color:white; }
+    .btn-dark     { background:var(--gas-blue); color:white; }
+    .btn-dark:hover { background:var(--gas-blue-lt); }
+    .btn-danger   { background:var(--danger); color:white; }
+    .btn-danger:hover { background:#dc2626; }
+    .btn-success  { background:var(--success); color:white; }
+    .btn-success:hover { background:#16a34a; }
+    .btn-purple   { background:var(--admin-accent); color:white; }
+    .btn-purple:hover { background:#7c3aed; }
+    .btn-sm       { padding:0.4rem 0.875rem; font-size:0.8rem; }
+    .btn-full     { width:100%; justify-content:center; }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom:1.25rem; }
+    .form-group label { display:block; font-weight:600; font-size:0.85rem; margin-bottom:0.4rem; color:var(--gas-blue); }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus { outline:none; border-color:var(--flame); }
+    .form-hint { font-size:0.78rem; color:var(--muted); margin-top:0.3rem; }
+
+    /* ── CARDS ── */
+    .card { background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden; }
+
+    /* ── BADGES / STATUS ── */
+    .badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:99px; font-size:0.75rem; font-weight:600; }
+    .badge-flame  { background:#fff1ee; color:var(--flame); }
+    .badge-blue   { background:#eff6ff; color:#1e40af; }
+    .badge-green  { background:#f0fdf4; color:#166534; }
+    .badge-yellow { background:#fffbeb; color:#92400e; }
+    .badge-gray   { background:#f3f4f6; color:#374151; }
+    .badge-purple { background:#f5f3ff; color:#5b21b6; }
+
+    .status-pending    { color:#92400e; background:#fffbeb; }
+    .status-confirmed  { color:#1e40af; background:#eff6ff; }
+    .status-processing { color:#1e3a8a; background:#dbeafe; }
+    .status-shipped    { color:#5b21b6; background:#f5f3ff; }
+    .status-delivered  { color:#166534; background:#f0fdf4; }
+    .status-cancelled  { color:#991b1b; background:#fef2f2; }
+
+    /* ── PAGE HEADER ── */
+    .page-header { background:var(--gas-blue); color:white; padding:1.75rem 1.25rem; }
+    .page-header h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(1.8rem,5vw,2.5rem); letter-spacing:2px; color:var(--flame); }
+    .page-header p { color:var(--silver); margin-top:0.25rem; font-size:0.9rem; }
+
+    /* ── CONTAINER ── */
+    .container { max-width:1200px; margin:0 auto; padding:0 1.25rem; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align:center; padding:3rem 1.5rem; color:var(--muted); }
+    .empty-state .icon { font-size:3.5rem; margin-bottom:1rem; }
+    .empty-state h3 { font-size:1.25rem; margin-bottom:0.5rem; color:var(--text); }
+
+    /* ── TABLE (responsive wrapper added per-page) ── */
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width:100%; border-collapse:collapse; min-width: 500px; }
+    th { background:var(--gas-blue); color:var(--silver); font-size:0.78rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; padding:0.875rem 1rem; text-align:left; white-space:nowrap; }
+    td { padding:0.875rem 1rem; border-bottom:1px solid #f3f4f6; vertical-align:middle; font-size:0.875rem; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafafa; }
+
+    /* ── QTY ── */
+    .qty-group { display:flex; align-items:center; border:2px solid #e5e7eb; border-radius:8px; overflow:hidden; width:fit-content; }
+    .qty-btn { background:#f3f4f6; border:none; padding:0.5rem 0.875rem; cursor:pointer; font-size:1.1rem; font-weight:700; transition:background 0.15s; }
+    .qty-btn:hover { background:var(--flame); color:white; }
+    .qty-input { width:48px; text-align:center; border:none!important; border-radius:0!important; padding:0.4rem 0!important; font-weight:600; }
+    .qty-input:focus { outline:none; }
+
+    /* ── PAYMENT CARDS ── */
+    .payment-options { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media(max-width:400px){ .payment-options{ grid-template-columns:1fr; } }
+    .payment-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .payment-card:hover { border-color: var(--flame); }
+    .payment-card input[type="radio"] { position:absolute; opacity:0; pointer-events:none; }
+    .payment-card.selected { border-color:var(--flame); background:#fff8f6; }
+    .payment-card .pay-icon { font-size:1.75rem; margin-bottom:0.4rem; display:block; }
+    .payment-card .pay-name { font-weight:700; color:var(--gas-blue); font-size:0.95rem; }
+    .payment-card .pay-desc { font-size:0.78rem; color:var(--muted); margin-top:0.2rem; }
+
+    /* ── STAT CARDS ── */
+    .stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:0.875rem; }
+    @media(min-width:480px){ .stat-grid{ grid-template-columns:repeat(3,1fr); } }
+    @media(min-width:900px){ .stat-grid{ grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); } }
+    .stat-card { background:white; border-radius:12px; padding:1.25rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+    .stat-card .stat-icon { font-size:1.75rem; margin-bottom:0.5rem; display:block; }
+    .stat-card .stat-value { font-family:'Bebas Neue',sans-serif; font-size:2rem; color:var(--gas-blue); letter-spacing:1px; }
+    .stat-card .stat-label { font-size:0.75rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+    .stat-card.highlight { background:var(--gas-blue); }
+    .stat-card.highlight .stat-value { color:var(--flame); }
+    .stat-card.highlight .stat-label { color:var(--silver); }
+
+    /* ── GLOBAL MOBILE FIXES ── */
+    @media(max-width:600px){
+      .page-header { padding:1.25rem 1rem; }
+      .container { padding:0 1rem; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated and user.is_staff %}
+<nav class="admin-nav">
+{% else %}
+<nav>
+{% endif %}
+  <a href="{% if user.is_authenticated and user.is_staff %}{% url 'dashboard:home' %}{% else %}{% url 'products:home' %}{% endif %}" class="nav-brand">
+    <span class="flame-icon">🔥</span>
+    <div>
+      <span>GASUL LPG</span>
+      <small>Surigao del Norte</small>
+    </div>
+  </a>
+
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <ul class="nav-links" id="navLinks">
+    {% if user.is_authenticated %}
+      {% if user.is_staff or user.is_superuser %}
+        <li><a href="{% url 'dashboard:home' %}">📊 Dashboard</a></li>
+        <li><a href="{% url 'dashboard:orders' %}">📦 Orders</a></li>
+        <li><a href="{% url 'dashboard:products' %}">🛢 Products</a></li>
+        <li><a href="{% url 'dashboard:users' %}">👥 Users</a></li>
+        <li><a href="{% url 'dashboard:carts' %}">🛒 Carts</a></li>
+        <li><a href="{% url 'dashboard:feedback' %}">💬 Feedback</a></li>
+        <li>
+          <a href="{% url 'users:logout' %}" class="btn-admin">
+            <span class="admin-badge">admin</span> {{ user.username }} · Logout
+          </a>
+        </li>
+      {% else %}
+        <li><a href="{% url 'products:home' %}">🏠 Shop</a></li>
+        <li>
+          <a href="{% url 'orders:cart' %}">
+            🛒 Cart
+            {% with count=user.cart_items.count %}
+              {% if count %}<span class="cart-badge">{{ count }}</span>{% endif %}
+            {% endwith %}
+          </a>
+        </li>
+        <li><a href="{% url 'products:wishlist' %}">❤️ Wishlist</a></li>
+        <li><a href="{% url 'orders:list' %}">📦 Orders</a></li>
+        <li><a href="{% url 'products:feedback' %}">💬 Feedback</a></li>
+        <li><a href="{% url 'users:logout' %}" class="btn-nav">{{ user.username }} · Logout</a></li>
+      {% endif %}
+    {% else %}
+      <li><a href="{% url 'products:home' %}">🏠 Shop</a></li>
+      <li><a href="{% url 'products:feedback' %}">💬 Feedback</a></li>
+      <li><a href="{% url 'users:login' %}">Login</a></li>
+      <li><a href="{% url 'users:register' %}" class="btn-nav">Register</a></li>
+    {% endif %}
+  </ul>
+</nav>
+
+{% if messages %}
+<div class="messages">
+  {% for msg in messages %}
+  <div class="message {{ msg.tags }}">
+    {% if msg.tags == 'success' %}✅{% elif msg.tags == 'error' %}❌{% elif msg.tags == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+    {{ msg }}
+  </div>
+  {% endfor %}
+</div>
+<script>setTimeout(() => document.querySelectorAll('.message').forEach(m => m.remove()), 4500);</script>
+{% endif %}
+
+<main>{% block content %}{% endblock %}</main>
+
+{% block extra_js %}{% endblock %}
+
+<footer>
+  <strong>GASUL LPG</strong> · Surigao del Norte · &copy; 2026 · All rights reserved
+</footer>
+
+<script>
+  const toggle = document.getElementById('navToggle');
+  const links  = document.getElementById('navLinks');
+  toggle.addEventListener('click', () => {
+    toggle.classList.toggle('open');
+    links.classList.toggle('open');
+  });
+  // Close menu when a link is tapped on mobile
+  links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    toggle.classList.remove('open');
+    links.classList.remove('open');
+  }));
+</script>
+</body>
+</html>

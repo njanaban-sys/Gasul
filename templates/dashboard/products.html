@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Manage Products – GASUL LPG Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:1200px; margin:1.5rem auto; padding:0 1.25rem; }
+  .filter-bar { background:white; border-radius:12px; padding:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-bottom:1.25rem; display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
+  .filter-bar select, .filter-bar input { padding:0.5rem 0.875rem; border:2px solid #e5e7eb; border-radius:8px; font-family:'Barlow',sans-serif; font-size:0.875rem; flex:1; min-width:140px; }
+  .filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:var(--flame); }
+  .products-table { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden; }
+  .prod-img { width:44px; height:44px; border-radius:8px; object-fit:cover; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+  .stock-badge { display:inline-block; padding:0.2rem 0.5rem; border-radius:99px; font-size:0.72rem; font-weight:600; white-space:nowrap; }
+  .stock-ok { background:#f0fdf4; color:#166534; }
+  .stock-low { background:#fffbeb; color:#92400e; }
+  .stock-out { background:#fef2f2; color:#991b1b; }
+  .action-btns { display:flex; gap:0.4rem; flex-wrap:nowrap; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🛢 Manage Products</h1>
+    <p>Add, edit, and manage product listings</p>
+  </div>
+</div>
+<div class="admin-wrap">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+    <a href="{% url 'dashboard:product_add' %}" class="btn btn-primary">➕ Add Product</a>
+  </div>
+
+  <form method="get" class="filter-bar">
+    <input type="text" name="search" value="{{ search }}" placeholder="🔍 Search products…">
+    <select name="category">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+      <option value="{{ cat.slug }}" {% if category_slug == cat.slug %}selected{% endif %}>{{ cat.icon }} {{ cat.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    {% if search or category_slug %}<a href="{% url 'dashboard:products' %}" class="btn btn-outline btn-sm">Clear</a>{% endif %}
+  </form>
+
+  <div class="products-table">
+    {% if products %}
+    <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Img</th>
+          <th>Product</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td>
+            <div class="prod-img">
+              {% if product.image %}<img src="{{ product.image.url }}" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover">{% else %}🔥{% endif %}
+            </div>
+          </td>
+          <td>
+            <strong>{{ product.name }}</strong>
+            {% if product.description %}<div style="font-size:0.75rem;color:var(--muted)">{{ product.description|truncatechars:40 }}</div>{% endif %}
+          </td>
+          <td style="white-space:nowrap">{{ product.category.icon }} {{ product.category.name }}</td>
+          <td style="font-weight:700;color:var(--flame);white-space:nowrap">₱{{ product.price|floatformat:2 }}</td>
+          <td>
+            {% if product.stock == 0 %}
+              <span class="stock-badge stock-out">Out</span>
+            {% elif product.stock <= 5 %}
+              <span class="stock-badge stock-low">⚠️ {{ product.stock }}</span>
+            {% else %}
+              <span class="stock-badge stock-ok">{{ product.stock }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if product.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-gray">Inactive</span>{% endif %}
+          </td>
+          <td>
+            <div class="action-btns">
+              <a href="{% url 'dashboard:product_edit' product.pk %}" class="btn btn-outline btn-sm">✏️</a>
+              <form method="post" action="{% url 'dashboard:product_toggle' product.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm {% if product.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                  {% if product.is_active %}Off{% else %}On{% endif %}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="icon">🛢</div><h3>No products found</h3></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

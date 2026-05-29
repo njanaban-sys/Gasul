@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users – GASUL LPG Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:1100px; margin:1.5rem auto; padding:0 1.25rem; }
+  .users-table { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>👥 Registered Users</h1>
+    <p>{{ users|length }} regular user{{ users|length|pluralize }}</p>
+  </div>
+</div>
+<div class="admin-wrap">
+  <div class="users-table">
+    {% if users %}
+    <div class="table-responsive"><table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Date Joined</th>
+          <th>Orders</th>
+          <th>Last Login</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong></td>
+          <td style="color:var(--muted)">{{ u.email|default:"—" }}</td>
+          <td style="color:var(--muted);font-size:0.85rem">{{ u.date_joined|date:"M j, Y" }}</td>
+          <td><span class="badge badge-blue">{{ u.order_count }}</span></td>
+          <td style="color:var(--muted);font-size:0.85rem">{{ u.last_login|date:"M j, Y"|default:"Never" }}</td>
+          <td>{% if u.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-gray">Inactive</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <div class="empty-state"><div class="icon">👥</div><h3>No users yet</h3></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

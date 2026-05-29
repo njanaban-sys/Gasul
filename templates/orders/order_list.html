@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}My Orders – GASUL LPG{% endblock %}
+{% block extra_css %}
+<style>
+  .orders-wrap { max-width:900px; margin:1.5rem auto; padding:0 1.25rem; }
+  .order-card { background:white; border-radius:14px; margin-bottom:1rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden; transition:transform 0.15s; }
+  .order-card:hover { transform:translateY(-2px); }
+  .order-header { display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem; border-bottom:1px solid #f3f4f6; flex-wrap:wrap; gap:0.75rem; }
+  .order-id { font-size:0.75rem; color:var(--muted); margin-bottom:0.2rem; }
+  .order-date { font-weight:600; color:var(--gas-blue); }
+  .order-status { display:inline-block; padding:0.3rem 0.875rem; border-radius:99px; font-size:0.8rem; font-weight:700; text-transform:capitalize; }
+  .order-total-big { font-size:1.3rem; font-weight:700; color:var(--flame); }
+  .order-items-preview { padding:1rem 1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center; }
+  .order-item-chip { background:#f3f4f6; border-radius:8px; padding:0.35rem 0.75rem; font-size:0.82rem; color:var(--gas-blue); }
+  .order-footer { padding:1rem 1.5rem; border-top:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; }
+  .payment-tag { font-size:0.78rem; color:var(--muted); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>📦 My Orders</h1>
+    <p>{{ orders|length }} order{{ orders|length|pluralize }}</p>
+  </div>
+</div>
+<div class="orders-wrap">
+  {% for order in orders %}
+  <div class="order-card">
+    <div class="order-header">
+      <div>
+        <div class="order-id">Order #{{ order.short_id }}</div>
+        <div class="order-date">{{ order.created_at|date:"F j, Y – g:i A" }}</div>
+      </div>
+      <span class="order-status status-{{ order.status }}">{{ order.get_status_display }}</span>
+      <div class="order-total-big">₱{{ order.total_amount|floatformat:2 }}</div>
+    </div>
+    <div class="order-items-preview">
+      {% for item in order.items.all %}
+        <span class="order-item-chip">{{ item.product.name }} ×{{ item.quantity }}</span>
+      {% endfor %}
+    </div>
+    <div class="order-footer">
+      <div class="payment-tag">
+        {% if order.payment_method == 'gcash' %}📱 GCash{% else %}💵 Cash on Delivery{% endif %}
+        · {% if order.is_paid %}<span style="color:var(--success)">✅ Paid</span>{% else %}<span style="color:var(--warning)">⏳ Payment Pending</span>{% endif %}
+      </div>
+      <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline btn-sm">View Details →</a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="icon">📦</div>
+      <h3>No orders yet</h3>
+      <p>Place your first order today!</p>
+      <a href="{% url 'products:home' %}" class="btn btn-primary" style="margin-top:1rem">Browse Products</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

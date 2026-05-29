@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}My Cart – GASUL LPG{% endblock %}
+{% block extra_css %}
+<style>
+  .cart-wrap { max-width:1100px; margin:1.5rem auto; padding:0 1.25rem; display:grid; grid-template-columns:1fr 320px; gap:1.25rem; }
+  @media(max-width:768px){ .cart-wrap{ grid-template-columns:1fr; } }
+  .cart-item { display:flex; align-items:center; gap:0.875rem; padding:1rem; border-bottom:1px solid #f3f4f6; flex-wrap:wrap; }
+  .cart-item:last-child { border-bottom:none; }
+  .cart-img { width:70px; height:70px; border-radius:10px; background:linear-gradient(135deg,#f3f4f6,#e5e7eb); display:flex; align-items:center; justify-content:center; font-size:2rem; flex-shrink:0; overflow:hidden; }
+  .cart-img img { width:100%; height:100%; object-fit:cover; }
+  .cart-item-info { flex:1; min-width:120px; }
+  .cart-item-name { font-weight:700; color:var(--gas-blue); margin-bottom:0.2rem; font-size:0.95rem; }
+  .cart-item-price { font-size:0.82rem; color:var(--muted); }
+  .cart-item-actions { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
+  .cart-item-subtotal { font-weight:700; font-size:1rem; color:var(--flame); min-width:70px; text-align:right; }
+  .summary-card { background:white; border-radius:14px; padding:1.25rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); height:fit-content; position:sticky; top:80px; }
+  .summary-card h3 { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--gas-blue); letter-spacing:1px; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:2px solid #f3f4f6; }
+  .summary-row { display:flex; justify-content:space-between; margin-bottom:0.6rem; font-size:0.875rem; }
+  .summary-total { display:flex; justify-content:space-between; font-size:1.1rem; font-weight:700; color:var(--gas-blue); padding-top:0.75rem; border-top:2px solid #f3f4f6; margin-top:0.4rem; margin-bottom:1rem; }
+  .summary-total span:last-child { color:var(--flame); }
+  @media(max-width:480px){
+    .cart-item { gap:0.6rem; }
+    .cart-img { width:58px; height:58px; font-size:1.6rem; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🛒 My Cart</h1>
+    <p>{{ items|length }} item{{ items|length|pluralize }} in your cart</p>
+  </div>
+</div>
+<div class="cart-wrap">
+  <div>
+    {% if items %}
+    <div class="card">
+      {% for item in items %}
+      <div class="cart-item">
+        <div class="cart-img">
+          {% if item.product.image %}<img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">{% else %}🔥{% endif %}
+        </div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">{{ item.product.name }}</div>
+          <div class="cart-item-price">{{ item.product.category.icon }} {{ item.product.category.name }} · ₱{{ item.product.discounted_price|floatformat:2 }} each</div>
+        </div>
+        <div class="cart-item-actions">
+          <form method="post" action="{% url 'orders:update_cart' item.pk %}">
+            {% csrf_token %}
+            <div class="qty-group">
+              <button type="button" class="qty-btn" onclick="adj(this,-1)">−</button>
+              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="qty-input" onchange="this.form.submit()">
+              <button type="button" class="qty-btn" onclick="adj(this,1)">+</button>
+            </div>
+          </form>
+          <form method="post" action="{% url 'orders:remove_from_cart' item.pk %}">
+            {% csrf_token %}<button type="submit" class="btn btn-danger btn-sm">🗑</button>
+          </form>
+        </div>
+        <div class="cart-item-subtotal">₱{{ item.subtotal|floatformat:2 }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:1rem"><a href="{% url 'products:home' %}" class="btn btn-outline">← Continue Shopping</a></div>
+    {% else %}
+    <div class="card">
+      <div class="empty-state">
+        <div class="icon">🛒</div>
+        <h3>Your cart is empty</h3>
+        <p>Add some products to get started.</p>
+        <a href="{% url 'products:home' %}" class="btn btn-primary" style="margin-top:1rem">Browse Products</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% if items %}
+  <div class="summary-card">
+    <h3>Order Summary</h3>
+    {% for item in items %}
+    <div class="summary-row"><span>{{ item.product.name }} ×{{ item.quantity }}</span><span>₱{{ item.subtotal|floatformat:2 }}</span></div>
+    {% endfor %}
+    <div class="summary-total"><span>Total</span><span>₱{{ total|floatformat:2 }}</span></div>
+    <a href="{% url 'orders:checkout' %}" class="btn btn-primary btn-full">Proceed to Checkout →</a>
+  </div>
+  {% endif %}
+</div>
+<script>
+function adj(btn, delta) {
+  const inp = btn.parentElement.querySelector('.qty-input');
+  inp.value = Math.min(parseInt(inp.max), Math.max(1, parseInt(inp.value) + delta));
+  inp.form.submit();
+}
+</script>
+{% endblock %}

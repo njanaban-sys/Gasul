@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Categories – GASUL LPG Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:900px; margin:1.5rem auto; padding:0 1.25rem; display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  @media(max-width:600px){ .admin-wrap{ grid-template-columns:1fr; } }
+  .panel { background:white; border-radius:14px; padding:1.75rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); height:fit-content; }
+  .panel h3 { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--gas-blue); letter-spacing:1px; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:2px solid #f3f4f6; }
+  .cat-row { display:flex; align-items:center; justify-content:space-between; padding:0.875rem 0; border-bottom:1px solid #f9fafb; }
+  .cat-row:last-child { border-bottom:none; }
+  .cat-icon { font-size:1.5rem; margin-right:0.75rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🏷️ Product Categories</h1>
+    <p>Manage how products are organized</p>
+  </div>
+</div>
+<div class="admin-wrap">
+  <!-- Existing -->
+  <div class="panel">
+    <h3>Existing Categories</h3>
+    {% for cat in categories %}
+    <div class="cat-row">
+      <div style="display:flex;align-items:center">
+        <span class="cat-icon">{{ cat.icon }}</span>
+        <div>
+          <div style="font-weight:700;color:var(--gas-blue)">{{ cat.name }}</div>
+          <div style="font-size:0.78rem;color:var(--muted)">{{ cat.slug }} · {{ cat.product_count }} product{{ cat.product_count|pluralize }}</div>
+        </div>
+      </div>
+      {% if cat.product_count == 0 %}
+      <form method="post" onsubmit="return confirm('Delete category {{ cat.name }}?')">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="category_id" value="{{ cat.pk }}">
+        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+      </form>
+      {% else %}
+      <span class="badge badge-gray">In use</span>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p style="color:var(--muted);text-align:center;padding:1rem">No categories yet.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Add new -->
+  <div class="panel">
+    <h3>Add Category</h3>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="form-group">
+        <label>Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="name" required placeholder="e.g. Accessories">
+      </div>
+      <div class="form-group">
+        <label>Slug <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="slug" required placeholder="e.g. accessories">
+        <div class="form-hint">Lowercase, no spaces. Used in URLs.</div>
+      </div>
+      <div class="form-group">
+        <label>Icon (Emoji)</label>
+        <input type="text" name="icon" placeholder="🔥" maxlength="10" value="🔥">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" rows="2" placeholder="Short description…" style="resize:vertical"></textarea>
+      </div>
+      <button type="submit" class="btn btn-purple btn-full">➕ Add Category</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

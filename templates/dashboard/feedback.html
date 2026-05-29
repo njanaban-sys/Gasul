@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Manage Feedback – GASUL LPG Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:1000px; margin:1.5rem auto; padding:0 1.25rem; }
+  .fb-table { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden; }
+  .stars { color:#f59e0b; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>💬 Manage Feedback</h1>
+    <p>Review and publish customer feedback</p>
+  </div>
+</div>
+<div class="admin-wrap">
+  <div class="fb-table">
+    {% if feedbacks %}
+    <div class="table-responsive"><table>
+      <thead>
+        <tr>
+          <th>From</th>
+          <th>Rating</th>
+          <th>Message</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fb in feedbacks %}
+        <tr>
+          <td>
+            <strong>{{ fb.name }}</strong>
+            {% if fb.email %}<div style="font-size:0.75rem;color:var(--muted)">{{ fb.email }}</div>{% endif %}
+          </td>
+          <td><span class="stars">{% for i in "12345" %}{% if forloop.counter <= fb.rating %}★{% else %}☆{% endif %}{% endfor %}</span></td>
+          <td style="max-width:300px;font-size:0.875rem">{{ fb.message|truncatechars:100 }}</td>
+          <td style="color:var(--muted);font-size:0.85rem">{{ fb.created_at|date:"M j, Y" }}</td>
+          <td>{% if fb.is_published %}<span class="badge badge-green">Published</span>{% else %}<span class="badge badge-gray">Draft</span>{% endif %}</td>
+          <td>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+              {% if fb.is_published %}
+              <form method="post">{% csrf_token %}<input type="hidden" name="feedback_id" value="{{ fb.pk }}"><input type="hidden" name="action" value="unpublish"><button type="submit" class="btn btn-outline btn-sm">Unpublish</button></form>
+              {% else %}
+              <form method="post">{% csrf_token %}<input type="hidden" name="feedback_id" value="{{ fb.pk }}"><input type="hidden" name="action" value="publish"><button type="submit" class="btn btn-success btn-sm">Publish</button></form>
+              {% endif %}
+              <form method="post" onsubmit="return confirm('Delete this feedback?')">{% csrf_token %}<input type="hidden" name="feedback_id" value="{{ fb.pk }}"><input type="hidden" name="action" value="delete"><button type="submit" class="btn btn-danger btn-sm">Delete</button></form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <div class="empty-state"><div class="icon">💬</div><h3>No feedback yet</h3></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

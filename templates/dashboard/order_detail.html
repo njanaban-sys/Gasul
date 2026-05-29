@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}Order #{{ order.short_id }} – Admin{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-wrap { max-width:960px; margin:1.5rem auto; padding:0 1.25rem; }
+  .panel { background:white; border-radius:14px; padding:1.5rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-bottom:1.25rem; }
+  .panel h3 { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--gas-blue); letter-spacing:1px; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:2px solid #f3f4f6; }
+  .meta-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+  @media(min-width:600px){ .meta-grid{ grid-template-columns:repeat(3,1fr); } }
+  .meta-item label { display:block; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:0.25rem; }
+  .meta-item span { font-weight:600; color:var(--gas-blue); font-size:0.9rem; }
+  .info-box { border-radius:8px; padding:0.875rem 1rem; font-size:0.875rem; margin-bottom:0.875rem; }
+  .info-box.address { background:#fffbeb; border-left:4px solid var(--warning); color:#78350f; }
+  .info-box.gcash { background:#eff6ff; border-left:4px solid #3b82f6; color:#1e40af; }
+  .log-row { display:flex; justify-content:space-between; align-items:center; gap:0.75rem; font-size:0.875rem; padding:0.75rem 0; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; }
+  .log-row:last-child { border-bottom:none; }
+  .payment-pill { display:inline-block; padding:0.25rem 0.65rem; border-radius:999px; font-weight:700; text-transform:capitalize; font-size:0.8rem; }
+  .payment-pill.paid { color:#166534; background:#dcfce7; }
+  .payment-pill.pending { color:#92400e; background:#fffbeb; }
+  .total-row { display:flex; justify-content:space-between; padding:1rem 1.25rem; background:var(--gas-blue); color:white; font-size:1rem; font-weight:700; border-radius:0 0 12px 12px; }
+  .total-row span:last-child { color:#FF6B35; }
+  .btn-group { display:flex; gap:0.75rem; flex-wrap:wrap; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>📦 Order #{{ order.short_id }}</h1>
+    <p>{{ order.user.username }} · {{ order.created_at|date:"F j, Y g:i A" }}</p>
+  </div>
+</div>
+<div class="admin-wrap">
+  <!-- Order info -->
+  <div class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.25rem">
+      <h3 style="margin:0;border:none;padding:0">Order Details</h3>
+      <span class="status-pill status-{{ order.status }}" style="display:inline-block;padding:0.4rem 1rem;border-radius:99px;font-weight:700;font-size:0.85rem;text-transform:capitalize">{{ order.get_status_display }}</span>
+    </div>
+    <div class="meta-grid">
+      <div class="meta-item"><label>Customer</label><span>{{ order.user.username }}</span></div>
+      <div class="meta-item"><label>Email</label><span>{{ order.user.email|default:"N/A" }}</span></div>
+      <div class="meta-item"><label>Total</label><span style="color:var(--flame)">₱{{ order.total_amount|floatformat:2 }}</span></div>
+      <div class="meta-item"><label>Items</label><span>{{ order.items.count }}</span></div>
+      <div class="meta-item"><label>Payment</label><span>{% if order.payment_method == 'gcash' %}📱 GCash{% else %}💵 COD{% endif %}</span></div>
+      <div class="meta-item">
+        <label>Payment Status</label>
+        <span class="payment-pill {{ order.payment_status_display|lower }}">{{ order.payment_status_display }}</span>
+      </div>
+      <div class="meta-item"><label>Placed</label><span>{{ order.created_at|date:"M j, Y" }}</span></div>
+      <div class="meta-item"><label>Updated</label><span>{{ order.updated_at|date:"M j, Y" }}</span></div>
+    </div>
+    <div style="margin-top:1rem">
+      <div class="info-box address"><strong>📍 Delivery Address:</strong><br>{{ order.delivery_address }}</div>
+      {% if order.special_instructions %}<div class="info-box address"><strong>📝 Special Instructions:</strong><br>{{ order.special_instructions }}</div>{% endif %}
+      {% if order.payment_method == 'gcash' and order.gcash_reference %}<div class="info-box gcash"><strong>📱 GCash Reference:</strong> {{ order.gcash_reference }}</div>{% endif %}
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="panel" style="padding:0;overflow:hidden">
+    <h3 style="padding:1.25rem;margin:0;border-bottom:1px solid #f3f4f6">Items Ordered</h3>
+    <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th style="text-align:center">Qty</th>
+          <th style="text-align:right">Unit Price</th>
+          <th style="text-align:right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order.items.all %}
+        <tr>
+          <td>
+            <strong>{{ item.product.name }}</strong>
+            <div style="font-size:0.78rem;color:var(--muted)">{{ item.product.category.icon }} {{ item.product.category.name }}</div>
+          </td>
+          <td style="text-align:center">{{ item.quantity }}</td>
+          <td style="text-align:right">₱{{ item.unit_price|floatformat:2 }}</td>
+          <td style="text-align:right;font-weight:700;color:var(--flame)">₱{{ item.subtotal|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <div class="total-row"><span>Total</span><span>₱{{ order.total_amount|floatformat:2 }}</span></div>
+  </div>
+
+  <!-- Update form -->
+  <div class="panel">
+    <h3>Update Order</h3>
+    <form method="post" id="payment-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Order Status</label>
+        <select name="status">
+          {% for val,label in status_choices %}
+          <option value="{{ val }}" {% if order.status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Payment Status</label>
+        <select name="payment_status">
+          {% for val,label in payment_status_choices %}
+          <option value="{{ val }}" {% if order.payment_status_display|lower == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Admin Notes</label>
+        <textarea name="admin_notes" rows="3" style="resize:vertical">{{ order.admin_notes }}</textarea>
+      </div>
+      <div class="btn-group">
+        <button type="submit" class="btn btn-purple">💾 Save Changes</button>
+        <a href="{% url 'dashboard:orders' %}" class="btn btn-outline">← Back</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Activity log -->
+  <div class="panel">
+    <h3>Payment Activity Log</h3>
+    {% if payment_logs %}
+      {% for log in payment_logs %}
+      <div class="log-row">
+        <div>
+          <strong>{% if log.user %}{{ log.user.username }}{% else %}System{% endif %}</strong><br>
+          <span style="color:var(--muted);font-size:0.8rem">{{ log.created_at|date:"M j, Y g:i A" }}</span>
+        </div>
+        <div>
+          <span class="payment-pill {{ log.previous_status }}">{{ log.previous_status }}</span>
+          <span style="margin:0 0.4rem">→</span>
+          <span class="payment-pill {{ log.updated_status }}">{{ log.updated_status }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--muted)">No payment activity recorded yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.getElementById('payment-form').addEventListener('submit', function(e) {
+    if (!confirm('Save changes to this order?')) e.preventDefault();
+  });
+</script>
+{% endblock %}

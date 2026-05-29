@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Order #{{ order.short_id }} – GASUL LPG{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-wrap { max-width:860px; margin:1.5rem auto; padding:0 1.25rem; }
+  .order-meta { background:white; border-radius:14px; padding:1.75rem; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-bottom:1.5rem; }
+  .meta-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:1.25rem; margin-top:1.25rem; }
+  .meta-item label { display:block; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:0.3rem; }
+  .meta-item span { font-weight:600; color:var(--gas-blue); font-size:0.95rem; }
+  .section-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--gas-blue); letter-spacing:1px; margin-bottom:1rem; }
+  .items-card { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.07); overflow:hidden; margin-bottom:1.5rem; }
+  .total-row { display:flex; justify-content:space-between; padding:1.25rem 1.5rem; background:var(--gas-blue); color:white; font-size:1.1rem; font-weight:700; }
+  .total-row span:last-child { color:#FF6B35; }
+  .status-pill { display:inline-block; padding:0.4rem 1rem; border-radius:99px; font-weight:700; font-size:0.9rem; text-transform:capitalize; }
+  .info-box { border-radius:8px; padding:1rem 1.25rem; font-size:0.9rem; margin-bottom:1rem; }
+  .info-box.address { background:#fffbeb; border-left:4px solid var(--warning); color:#78350f; }
+  .info-box.payment { background:#f0fdf4; border-left:4px solid var(--success); color:#166534; }
+  .info-box.gcash { background:#eff6ff; border-left:4px solid #3b82f6; color:#1e40af; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>📦 Order Details</h1>
+    <p>#{{ order.short_id }} · {{ order.created_at|date:"F j, Y" }}</p>
+  </div>
+</div>
+
+<div class="detail-wrap">
+  <div class="order-meta">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+      <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gas-blue);letter-spacing:1px">
+        Order #{{ order.short_id }}
+      </h3>
+      <span class="status-pill status-{{ order.status }}">{{ order.get_status_display }}</span>
+    </div>
+    <div class="meta-grid">
+      <div class="meta-item"><label>Date Placed</label><span>{{ order.created_at|date:"M j, Y g:i A" }}</span></div>
+      <div class="meta-item"><label>Last Updated</label><span>{{ order.updated_at|date:"M j, Y g:i A" }}</span></div>
+      <div class="meta-item"><label>Total Amount</label><span style="color:var(--flame)">₱{{ order.total_amount|floatformat:2 }}</span></div>
+      <div class="meta-item"><label>Items</label><span>{{ order.items.count }} product{{ order.items.count|pluralize }}</span></div>
+      <div class="meta-item">
+        <label>Payment</label>
+        <span>
+          {% if order.payment_method == 'gcash' %}📱{% else %}💵{% endif %}
+          {{ order.payment_method_display }}
+        </span>
+      </div>
+      <div class="meta-item">
+        <label>Payment Status</label>
+        <span {% if order.is_paid %}style="color:var(--success)"{% else %}style="color:var(--warning)"{% endif %}>
+          {% if order.is_paid %}✅ Paid{% else %}⏳ Pending{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delivery address -->
+  <div class="info-box address">
+    <strong>📍 Delivery Address:</strong><br>{{ order.delivery_address }}
+  </div>
+
+  {% if order.special_instructions %}
+  <div class="info-box payment">
+    <strong>📝 Special Instructions:</strong><br>{{ order.special_instructions }}
+  </div>
+  {% endif %}
+
+  {% if order.payment_method == 'gcash' and order.gcash_reference %}
+  <div class="info-box gcash">
+    <strong>📱 GCash Reference:</strong> {{ order.gcash_reference }}
+  </div>
+  {% endif %}
+
+  <!-- Items -->
+  <div class="section-title">Items Ordered</div>
+  <div class="items-card"><div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th style="text-align:center">Qty</th>
+          <th style="text-align:right">Unit Price</th>
+          <th style="text-align:right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order.items.all %}
+        <tr>
+          <td>
+            <strong>{{ item.product.name }}</strong>
+            <div style="font-size:0.8rem;color:var(--muted)">{{ item.product.category.icon }} {{ item.product.category.name }}</div>
+          </td>
+          <td style="text-align:center">{{ item.quantity }}</td>
+          <td style="text-align:right">₱{{ item.unit_price|floatformat:2 }}</td>
+          <td style="text-align:right;font-weight:700;color:var(--flame)">₱{{ item.subtotal|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div><div class="total-row"><span>Total</span><span>₱{{ order.total_amount|floatformat:2 }}</span></div>
+  </div>
+
+  <div style="display:flex;gap:1rem;flex-wrap:wrap">
+    <a href="{% url 'orders:list' %}" class="btn btn-outline">← All Orders</a>
+    <a href="{% url 'products:home' %}" class="btn btn-dark">🔥 Shop More</a>
+  </div>
+</div>
+{% endblock %}
